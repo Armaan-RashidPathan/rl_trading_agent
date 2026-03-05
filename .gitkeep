@@ -1,0 +1,6 @@
+New-Item -ItemType File -Path data/raw/.gitkeep -Force
+New-Item -ItemType File -Path data/processed/.gitkeep -Force
+New-Item -ItemType File -Path results/models/.gitkeep -Force
+New-Item -ItemType File -Path results/figures/.gitkeep -Force
+New-Item -ItemType File -Path results/metrics/.gitkeep -Force
+New-Item -ItemType File -Path notebooks/.gitkeep -Force
