@@ -8,8 +8,8 @@ scipy>=1.10.0
 # Data Collection
 yfinance>=0.2.0
 
-# Technical Analysis
-pandas-ta>=0.3.0
+# Technical Analysis (using 'ta' instead of 'pandas-ta')
+ta>=0.10.0
 
 # Deep Learning
 torch>=2.0.0
