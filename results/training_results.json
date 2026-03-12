@@ -1,0 +1,25 @@
+{
+  "sentiment": {
+    "mean_return": 35.13249206542969,
+    "final_value": 13513.2490234375,
+    "n_trades": 22.0,
+    "sharpe_ratio": 1.5662256591855708,
+    "max_drawdown": 0.15198928117752075
+  },
+  "baseline": {
+    "mean_return": 32.0170783996582,
+    "final_value": 13201.7080078125,
+    "n_trades": 1.0,
+    "sharpe_ratio": 1.2287966499990928,
+    "max_drawdown": 0.1660664975643158
+  },
+  "buy_and_hold": {
+    "mean_return": 32.0170783996582,
+    "final_value": 13201.7080078125,
+    "sharpe_ratio": 1.233049912112002,
+    "max_drawdown": 0.1660664975643158,
+    "n_trades": 1.0
+  },
+  "train_days": 1143,
+  "test_days": 286
+}

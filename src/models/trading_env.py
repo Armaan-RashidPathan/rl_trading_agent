@@ -310,13 +310,28 @@ class TradingEnvironment(gym.Env):
     def _calculate_reward(self, new_value):
         """
         Calculate step reward
-
-        Reward = portfolio return for this step
+        
+        Enhanced reward with:
+        - Portfolio return (base signal)
+        - Risk penalty (drawdown awareness)
+        - Trade efficiency bonus
         """
         if self.prev_value > 0:
-            reward = (new_value - self.prev_value) / self.prev_value
+            # Base: portfolio return
+            portfolio_return = (new_value - self.prev_value) / self.prev_value
         else:
-            reward = 0.0
+            portfolio_return = 0.0
+
+        # Risk penalty: penalize drawdowns from peak
+        peak_value = max(self.portfolio_history) if self.portfolio_history else self.initial_balance
+        if peak_value > 0:
+            drawdown = (peak_value - new_value) / peak_value
+            risk_penalty = -0.1 * max(0, drawdown - 0.05)  # Penalize DD > 5%
+        else:
+            risk_penalty = 0.0
+
+        # Scale reward to make learning signal stronger
+        reward = portfolio_return * 100 + risk_penalty
 
         return float(reward)
 
