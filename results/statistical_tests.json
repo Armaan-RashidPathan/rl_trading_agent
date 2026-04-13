@@ -1,0 +1,55 @@
+{
+  "run_timestamp": "2026-03-29T15:04:08.018953",
+  "summary": {
+    "n_days": 252,
+    "sentiment_mean_daily_return": 0.0009247025366934186,
+    "baseline_mean_daily_return": 0.0010559139127893592,
+    "sentiment_annualized_sharpe": 0.7603482796689885,
+    "baseline_annualized_sharpe": 0.7614766185147197
+  },
+  "tests": {
+    "paired_t": {
+      "test": "paired_t_test",
+      "t_statistic": -0.07179136770922459,
+      "p_value": 0.9428251134089505,
+      "significant_5pct": false,
+      "significant_1pct": false,
+      "mean_difference": -0.00013121137609594034,
+      "std_difference": 0.028955837036063414,
+      "n_observations": 252
+    },
+    "wilcoxon": {
+      "test": "wilcoxon_signed_rank",
+      "statistic": 15890.0,
+      "p_value": 0.966255265789429,
+      "significant_5pct": false,
+      "n_nonzero": 252
+    },
+    "sharpe_equality": {
+      "test": "sharpe_ratio_equality_jobson_korkie",
+      "sharpe_a_annualized": 0.758838152506527,
+      "sharpe_b_annualized": 0.75996425035834,
+      "z_statistic": -0.0008047824472801228,
+      "p_value": 0.9993578765798246,
+      "significant_5pct": false,
+      "correlation": 0.022158138322428973
+    },
+    "bootstrap_sharpe": {
+      "test": "bootstrap_sharpe_difference",
+      "mean_sharpe_diff": -0.013486119213048679,
+      "median_sharpe_diff": -0.01235849046447704,
+      "ci_95pct": [
+        -2.7921423665069245,
+        2.7521070005367965
+      ],
+      "p_value_one_sided": 0.5042,
+      "significant": false,
+      "n_bootstrap": 10000
+    }
+  },
+  "verdict": {
+    "tests_significant": 0,
+    "tests_total": 4,
+    "conclusion": "NO statistically significant evidence of improvement"
+  }
+}

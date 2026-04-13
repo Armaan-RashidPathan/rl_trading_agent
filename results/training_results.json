@@ -1,17 +1,17 @@
 {
   "sentiment": {
-    "mean_return": 35.13249206542969,
-    "final_value": 13513.2490234375,
-    "n_trades": 22.0,
-    "sharpe_ratio": 1.5662256591855708,
-    "max_drawdown": 0.15198928117752075
+    "mean_return": 2.5659375190734863,
+    "final_value": 10256.59375,
+    "n_trades": 25.0,
+    "sharpe_ratio": 0.21638683893166472,
+    "max_drawdown": 0.17664262652397156
   },
   "baseline": {
-    "mean_return": 32.0170783996582,
-    "final_value": 13201.7080078125,
+    "mean_return": 31.92291831970215,
+    "final_value": 13192.2919921875,
     "n_trades": 1.0,
-    "sharpe_ratio": 1.2287966499990928,
-    "max_drawdown": 0.1660664975643158
+    "sharpe_ratio": 1.2257541618983037,
+    "max_drawdown": 0.166066512465477
   },
   "buy_and_hold": {
     "mean_return": 32.0170783996582,

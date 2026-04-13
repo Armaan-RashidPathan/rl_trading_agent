@@ -9,6 +9,9 @@ import sys
 import numpy as np
 import pandas as pd
 import json
+import yaml
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pathlib import Path
@@ -27,9 +30,7 @@ class TradingEvaluator:
     def __init__(self, save_dir="results/plots"):
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Set style
-        plt.style.use('seaborn-v0_8-whitegrid')
+
         plt.rcParams.update({
             'figure.figsize': (12, 6),
             'font.size': 12,
@@ -48,121 +49,82 @@ class TradingEvaluator:
         baseline_results,
         buy_hold_results,
     ):
-        """
-        Run complete evaluation and generate all plots.
-        
-        Args:
-            sentiment_portfolio: list of portfolio values (sentiment agent)
-            baseline_portfolio:  list of portfolio values (baseline agent)
-            buy_hold_portfolio:  list of portfolio values (buy & hold)
-            test_dates:          DatetimeIndex for test period
-            test_prices:         array of test prices
-            sentiment_results:   dict with metrics
-            baseline_results:    dict with metrics
-            buy_hold_results:    dict with metrics
-        """
+        """Run complete evaluation and generate all plots."""
         print("=" * 60)
         print("GENERATING EVALUATION REPORT")
         print("=" * 60)
 
-        # 1. Portfolio comparison plot
+        # 1. Portfolio comparison
         print("\n[1/5] Portfolio comparison plot...")
         self.plot_portfolio_comparison(
-            sentiment_portfolio,
-            baseline_portfolio,
-            buy_hold_portfolio,
-            test_dates,
+            sentiment_portfolio, baseline_portfolio,
+            buy_hold_portfolio, test_dates,
         )
 
         # 2. Returns distribution
         print("[2/5] Returns distribution plot...")
         self.plot_returns_distribution(
-            sentiment_portfolio,
-            baseline_portfolio,
+            sentiment_portfolio, baseline_portfolio,
             buy_hold_portfolio,
         )
 
         # 3. Drawdown comparison
         print("[3/5] Drawdown comparison plot...")
         self.plot_drawdowns(
-            sentiment_portfolio,
-            baseline_portfolio,
-            buy_hold_portfolio,
-            test_dates,
+            sentiment_portfolio, baseline_portfolio,
+            buy_hold_portfolio, test_dates,
         )
 
         # 4. Performance metrics table
         print("[4/5] Performance metrics table...")
         self.plot_metrics_table(
-            sentiment_results,
-            baseline_results,
-            buy_hold_results,
+            sentiment_results, baseline_results, buy_hold_results,
         )
 
-        # 5. Price with trades overlay
+        # 5. Price with portfolio overlay
         print("[5/5] Price and portfolio overlay...")
         self.plot_price_portfolio_overlay(
-            test_prices,
-            sentiment_portfolio,
-            test_dates,
+            test_prices, sentiment_portfolio, test_dates,
         )
 
         # Print text summary
         self.print_summary(
-            sentiment_results,
-            baseline_results,
-            buy_hold_results,
+            sentiment_results, baseline_results, buy_hold_results,
         )
 
         print(f"\n✓ All plots saved to: {self.save_dir}/")
         print("=" * 60)
 
-    def plot_portfolio_comparison(
-        self, sentiment, baseline, buy_hold, dates
-    ):
+    def plot_portfolio_comparison(self, sentiment, baseline, buy_hold, dates):
         """Plot portfolio value over time for all strategies."""
         fig, ax = plt.subplots(figsize=(14, 7))
 
-        # Align lengths
         n = min(len(sentiment), len(baseline), len(buy_hold), len(dates))
         dates_plot = dates[:n]
 
-        ax.plot(
-            dates_plot, sentiment[:n],
-            label='Sentiment Agent', color='#2196F3',
-            linewidth=2, alpha=0.9
-        )
-        ax.plot(
-            dates_plot, baseline[:n],
-            label='Baseline Agent', color='#FF9800',
-            linewidth=2, alpha=0.9
-        )
-        ax.plot(
-            dates_plot, buy_hold[:n],
-            label='Buy & Hold', color='#4CAF50',
-            linewidth=2, linestyle='--', alpha=0.7
-        )
+        ax.plot(dates_plot, sentiment[:n],
+                label='Sentiment Agent', color='#2196F3',
+                linewidth=2, alpha=0.9)
+        ax.plot(dates_plot, baseline[:n],
+                label='Baseline Agent', color='#FF9800',
+                linewidth=2, alpha=0.9)
+        ax.plot(dates_plot, buy_hold[:n],
+                label='Buy & Hold', color='#4CAF50',
+                linewidth=2, linestyle='--', alpha=0.7)
 
-        # Initial value line
-        ax.axhline(
-            y=10000, color='gray', linestyle=':',
-            alpha=0.5, label='Initial ($10,000)'
-        )
+        ax.axhline(y=10000, color='gray', linestyle=':',
+                   alpha=0.5, label='Initial ($10,000)')
 
         ax.set_title(
             'Portfolio Value Comparison: Sentiment vs Baseline vs Buy & Hold',
-            fontsize=16, fontweight='bold'
-        )
+            fontsize=16, fontweight='bold')
         ax.set_xlabel('Date')
         ax.set_ylabel('Portfolio Value ($)')
         ax.legend(loc='upper left', fontsize=11)
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
         ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
         plt.xticks(rotation=45)
-
-        # Add grid
         ax.grid(True, alpha=0.3)
-        ax.set_axisbelow(True)
 
         plt.tight_layout()
         plt.savefig(self.save_dir / 'portfolio_comparison.png', dpi=150)
@@ -180,31 +142,23 @@ class TradingEvaluator:
         }
 
         for ax, (name, (portfolio, color)) in zip(axes, portfolios.items()):
-            # Calculate daily returns
             returns = []
             for i in range(1, len(portfolio)):
                 r = (portfolio[i] - portfolio[i-1]) / portfolio[i-1]
-                returns.append(r * 100)  # Percentage
+                returns.append(r * 100)
 
-            ax.hist(
-                returns, bins=50, color=color, alpha=0.7,
-                edgecolor='white', linewidth=0.5
-            )
+            ax.hist(returns, bins=50, color=color, alpha=0.7,
+                    edgecolor='white', linewidth=0.5)
             ax.axvline(x=0, color='black', linestyle='-', alpha=0.3)
-            ax.axvline(
-                x=np.mean(returns), color='red',
-                linestyle='--', alpha=0.8,
-                label=f'Mean: {np.mean(returns):.3f}%'
-            )
+            ax.axvline(x=np.mean(returns), color='red', linestyle='--',
+                       alpha=0.8, label=f'Mean: {np.mean(returns):.3f}%')
             ax.set_title(name, fontsize=13)
             ax.set_xlabel('Daily Return (%)')
             ax.set_ylabel('Frequency')
             ax.legend(fontsize=9)
 
-        plt.suptitle(
-            'Daily Returns Distribution',
-            fontsize=16, fontweight='bold', y=1.02
-        )
+        plt.suptitle('Daily Returns Distribution',
+                     fontsize=16, fontweight='bold', y=1.02)
         plt.tight_layout()
         plt.savefig(self.save_dir / 'returns_distribution.png', dpi=150)
         plt.close()
@@ -225,16 +179,12 @@ class TradingEvaluator:
 
         for name, (portfolio, color) in portfolios.items():
             dd = self._compute_drawdown_series(portfolio[:n])
-            ax.fill_between(
-                dates_plot, dd, 0,
-                alpha=0.3, color=color, label=name
-            )
+            ax.fill_between(dates_plot, dd, 0, alpha=0.3, color=color,
+                            label=name)
             ax.plot(dates_plot, dd, color=color, linewidth=1, alpha=0.7)
 
-        ax.set_title(
-            'Drawdown Comparison',
-            fontsize=16, fontweight='bold'
-        )
+        ax.set_title('Drawdown Comparison',
+                     fontsize=16, fontweight='bold')
         ax.set_xlabel('Date')
         ax.set_ylabel('Drawdown (%)')
         ax.legend(loc='lower left', fontsize=11)
@@ -255,56 +205,40 @@ class TradingEvaluator:
 
         metrics = [
             ['Metric', 'Sentiment', 'Baseline', 'Buy & Hold'],
-            [
-                'Total Return (%)',
-                f"{sentiment_res.get('mean_return', 0):.2f}",
-                f"{baseline_res.get('mean_return', 0):.2f}",
-                f"{bh_res.get('mean_return', 0):.2f}",
-            ],
-            [
-                'Final Value ($)',
-                f"${sentiment_res.get('final_value', 0):,.0f}",
-                f"${baseline_res.get('final_value', 0):,.0f}",
-                f"${bh_res.get('final_value', 0):,.0f}",
-            ],
-            [
-                'Sharpe Ratio',
-                f"{sentiment_res.get('sharpe_ratio', 0):.2f}",
-                f"{baseline_res.get('sharpe_ratio', 0):.2f}",
-                f"{bh_res.get('sharpe_ratio', 0):.2f}",
-            ],
-            [
-                'Max Drawdown (%)',
-                f"{sentiment_res.get('max_drawdown', 0)*100:.2f}",
-                f"{baseline_res.get('max_drawdown', 0)*100:.2f}",
-                f"{bh_res.get('max_drawdown', 0)*100:.2f}",
-            ],
-            [
-                'Number of Trades',
-                f"{sentiment_res.get('n_trades', 0):.0f}",
-                f"{baseline_res.get('n_trades', 0):.0f}",
-                f"{bh_res.get('n_trades', 0):.0f}",
-            ],
+            ['Total Return (%)',
+             f"{sentiment_res.get('mean_return', 0):.2f}",
+             f"{baseline_res.get('mean_return', 0):.2f}",
+             f"{bh_res.get('mean_return', 0):.2f}"],
+            ['Final Value ($)',
+             f"${sentiment_res.get('final_value', 0):,.0f}",
+             f"${baseline_res.get('final_value', 0):,.0f}",
+             f"${bh_res.get('final_value', 0):,.0f}"],
+            ['Sharpe Ratio',
+             f"{sentiment_res.get('sharpe_ratio', 0):.2f}",
+             f"{baseline_res.get('sharpe_ratio', 0):.2f}",
+             f"{bh_res.get('sharpe_ratio', 0):.2f}"],
+            ['Max Drawdown (%)',
+             f"{sentiment_res.get('max_drawdown', 0)*100:.2f}",
+             f"{baseline_res.get('max_drawdown', 0)*100:.2f}",
+             f"{bh_res.get('max_drawdown', 0)*100:.2f}"],
+            ['Number of Trades',
+             f"{sentiment_res.get('n_trades', 0):.0f}",
+             f"{baseline_res.get('n_trades', 0):.0f}",
+             f"{bh_res.get('n_trades', 0):.0f}"],
         ]
 
-        # Determine best values for highlighting
         table = ax.table(
-            cellText=metrics[1:],
-            colLabels=metrics[0],
-            cellLoc='center',
-            loc='center',
+            cellText=metrics[1:], colLabels=metrics[0],
+            cellLoc='center', loc='center',
         )
-
         table.auto_set_font_size(False)
         table.set_fontsize(12)
         table.scale(1.2, 1.8)
 
-        # Style header
         for j in range(4):
             table[0, j].set_facecolor('#37474F')
             table[0, j].set_text_props(color='white', fontweight='bold')
 
-        # Style rows
         for i in range(1, len(metrics)):
             for j in range(4):
                 if i % 2 == 0:
@@ -312,10 +246,8 @@ class TradingEvaluator:
                 else:
                     table[i, j].set_facecolor('#FFFFFF')
 
-        ax.set_title(
-            'Performance Metrics Comparison',
-            fontsize=16, fontweight='bold', pad=20
-        )
+        ax.set_title('Performance Metrics Comparison',
+                     fontsize=16, fontweight='bold', pad=20)
 
         plt.tight_layout()
         plt.savefig(self.save_dir / 'metrics_table.png', dpi=150)
@@ -329,37 +261,26 @@ class TradingEvaluator:
         n = min(len(prices), len(portfolio), len(dates))
         dates_plot = dates[:n]
 
-        # Price
         color1 = '#37474F'
-        ax1.plot(
-            dates_plot, prices[:n],
-            color=color1, linewidth=1.5, alpha=0.7,
-            label='Stock Price'
-        )
+        ax1.plot(dates_plot, prices[:n], color=color1,
+                 linewidth=1.5, alpha=0.7, label='Stock Price')
         ax1.set_xlabel('Date')
         ax1.set_ylabel('Stock Price ($)', color=color1)
         ax1.tick_params(axis='y', labelcolor=color1)
 
-        # Portfolio on second axis
         ax2 = ax1.twinx()
         color2 = '#2196F3'
-        ax2.plot(
-            dates_plot, portfolio[:n],
-            color=color2, linewidth=2, alpha=0.9,
-            label='Sentiment Portfolio'
-        )
+        ax2.plot(dates_plot, portfolio[:n], color=color2,
+                 linewidth=2, alpha=0.9, label='Sentiment Portfolio')
         ax2.set_ylabel('Portfolio Value ($)', color=color2)
         ax2.tick_params(axis='y', labelcolor=color2)
 
-        # Combine legends
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
 
-        ax1.set_title(
-            'Stock Price vs Portfolio Value (Sentiment Agent)',
-            fontsize=16, fontweight='bold'
-        )
+        ax1.set_title('Stock Price vs Portfolio Value (Sentiment Agent)',
+                      fontsize=16, fontweight='bold')
         ax1.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
         ax1.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
         plt.xticks(rotation=45)
@@ -382,7 +303,7 @@ class TradingEvaluator:
         return drawdowns
 
     def print_summary(self, sentiment_res, baseline_res, bh_res):
-        """Print text summary for report."""
+        """Print text summary."""
         print("\n" + "=" * 60)
         print("EVALUATION SUMMARY")
         print("=" * 60)
@@ -406,40 +327,113 @@ class TradingEvaluator:
         print(f"  Baseline:  {baseline_res.get('max_drawdown', 0)*100:.2f}%")
         print(f"  Buy&Hold:  {bh_res.get('max_drawdown', 0)*100:.2f}%")
 
-        # Key findings
         print(f"\nKEY FINDINGS:")
         if s_ret > b_ret:
-            improvement = s_ret - b_ret
-            print(f"  ✓ Sentiment improves returns by {improvement:.2f}% over baseline")
+            print(f"  ✓ Sentiment improves returns by {s_ret - b_ret:.2f}% over baseline")
         else:
             print(f"  ✗ Baseline outperforms sentiment by {b_ret - s_ret:.2f}%")
 
         s_sharpe = sentiment_res.get('sharpe_ratio', 0)
         b_sharpe = baseline_res.get('sharpe_ratio', 0)
         if s_sharpe > b_sharpe:
-            print(f"  ✓ Sentiment has better risk-adjusted returns (Sharpe: {s_sharpe:.2f} vs {b_sharpe:.2f})")
+            print(f"  ✓ Better risk-adjusted returns (Sharpe: {s_sharpe:.2f} vs {b_sharpe:.2f})")
 
         s_dd = sentiment_res.get('max_drawdown', 0)
-        b_dd = baseline_res.get('max_drawdown', 0)
         bh_dd = bh_res.get('max_drawdown', 0)
-        if s_dd < b_dd and s_dd < bh_dd:
-            print(f"  ✓ Sentiment has lowest drawdown ({s_dd*100:.2f}%)")
+        if s_dd < bh_dd:
+            print(f"  ✓ Lower drawdown than Buy&Hold ({s_dd*100:.2f}% vs {bh_dd*100:.2f}%)")
 
         print("=" * 60)
 
 
+def compute_buy_and_hold(prices, initial_balance=10000, transaction_cost=0.001):
+    """Compute buy-and-hold baseline."""
+    if isinstance(prices, pd.Series):
+        price_array = prices.values
+    else:
+        price_array = np.array(prices)
+
+    shares = (initial_balance * (1 - transaction_cost)) / price_array[0]
+    portfolio = [shares * p for p in price_array]
+
+    final_value = portfolio[-1]
+    total_return = (final_value - initial_balance) / initial_balance * 100
+
+    daily_returns = []
+    for i in range(1, len(portfolio)):
+        dr = (portfolio[i] - portfolio[i-1]) / portfolio[i-1]
+        daily_returns.append(dr)
+
+    if len(daily_returns) > 1:
+        sharpe = np.mean(daily_returns) / (np.std(daily_returns) + 1e-8) * np.sqrt(252)
+    else:
+        sharpe = 0.0
+
+    peak = portfolio[0]
+    max_dd = 0.0
+    for pv in portfolio:
+        if pv > peak:
+            peak = pv
+        dd = (peak - pv) / peak
+        if dd > max_dd:
+            max_dd = dd
+
+    return {
+        'mean_return': total_return,
+        'final_value': final_value,
+        'sharpe_ratio': sharpe,
+        'max_drawdown': max_dd,
+        'portfolio': portfolio,
+        'n_trades': 1,
+    }
+
+
+def evaluate_agent_with_metrics(agent_wrapper, features, prices, n_episodes=1):
+    """Evaluate agent and compute full metrics."""
+    results = agent_wrapper.evaluate(features, prices, n_episodes)
+
+    portfolio = results['portfolio']
+
+    daily_returns = []
+    for i in range(1, len(portfolio)):
+        dr = (portfolio[i] - portfolio[i-1]) / portfolio[i-1]
+        daily_returns.append(dr)
+
+    if len(daily_returns) > 1:
+        sharpe = np.mean(daily_returns) / (np.std(daily_returns) + 1e-8) * np.sqrt(252)
+    else:
+        sharpe = 0.0
+
+    peak = portfolio[0]
+    max_dd = 0.0
+    for pv in portfolio:
+        if pv > peak:
+            peak = pv
+        dd = (peak - pv) / peak
+        if dd > max_dd:
+            max_dd = dd
+
+    results['sharpe_ratio'] = sharpe
+    results['max_drawdown'] = max_dd
+
+    return results
+
+
 # ============================================================
-# MAIN: Run evaluation on saved results
+# MAIN
 # ============================================================
 
 if __name__ == "__main__":
     from src.data.data_pipeline import DataPipeline
     from src.models.ppo_agent import HierarchicalPPOAgent, BaselinePPOAgent
-    from src.training.trainer import evaluate_agent, compute_buy_and_hold
 
     print("=" * 60)
     print("RUNNING FULL EVALUATION")
     print("=" * 60)
+
+    # Load config
+    with open("configs/config.yaml", 'r') as f:
+        config = yaml.safe_load(f)
 
     # Load data
     print("\n[1/4] Loading data...")
@@ -461,10 +455,6 @@ if __name__ == "__main__":
 
     # Load trained models
     print("\n[2/4] Loading trained models...")
-    import yaml
-    with open("configs/config.yaml", 'r') as f:
-        config = yaml.safe_load(f)
-
     sentiment_agent = HierarchicalPPOAgent()
     sentiment_agent.load(
         "models/saved/sentiment_agent",
@@ -479,8 +469,12 @@ if __name__ == "__main__":
 
     # Evaluate
     print("\n[3/4] Evaluating agents...")
-    sentiment_results = evaluate_agent(sentiment_agent, test_features, test_prices)
-    baseline_results = evaluate_agent(baseline_agent, test_features, test_prices)
+    sentiment_results = evaluate_agent_with_metrics(
+        sentiment_agent, test_features, test_prices
+    )
+    baseline_results = evaluate_agent_with_metrics(
+        baseline_agent, test_features, test_prices
+    )
 
     env_config = config['environment']
     buy_hold_results = compute_buy_and_hold(
@@ -503,4 +497,4 @@ if __name__ == "__main__":
         buy_hold_results=buy_hold_results,
     )
 
-    print("\nDone! Check results/plots/ for all visualizations.")
+    print("\n✓ Done! Check results/plots/ for all visualizations.")
